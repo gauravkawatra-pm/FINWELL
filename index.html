@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finwell: finish one money goal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+:root{--bg:#F1F5F4;--ink:#16211F;--mute:#5B6B68;--teal:#0F4C4A;--gold:#E8A33D;--line:#CBD6D3;--card:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#0F1A19;--ink:#E8F0EE;--mute:#9DB0AC;--teal:#5FB3AD;--gold:#E8A33D;--line:#2A3B38;--card:#16262A}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 'Source Sans 3',system-ui,sans-serif}
+main{max-width:560px;margin:0 auto;padding:28px 18px 60px}
+h1,h2{font-family:'Bricolage Grotesque',system-ui,sans-serif;line-height:1.1;margin:0}
+h1{font-size:2.3rem;font-weight:800;color:var(--teal)}
+h2{font-size:1.5rem;font-weight:800}
+p.lead{color:var(--mute);margin:10px 0 22px}
+label{display:block;font-weight:600;margin:16px 0 6px}
+select,input[type=text],textarea{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit}
+select:focus,input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+.chk{display:flex;gap:10px;align-items:flex-start;font-weight:400;margin:18px 0}
+.chk input{margin-top:5px;width:18px;height:18px}
+button{font:600 1rem 'Source Sans 3',sans-serif;background:var(--teal);color:#fff;border:0;border-radius:8px;padding:14px 20px;width:100%;cursor:pointer}
+@media(prefers-color-scheme:dark){button{color:#0F1A19}}
+button.ghost{background:none;color:var(--mute);text-decoration:underline;width:auto;padding:8px 0;margin-top:18px}
+.track{height:18px;background:var(--line);border-radius:9px;overflow:hidden;margin:14px 0 4px}
+.fill{height:100%;background:var(--gold);width:0;transition:width .4s}
+.meta{color:var(--mute);font-size:.95rem}
+.act{display:flex;gap:12px;background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:14px;margin:10px 0;font-weight:400;cursor:pointer}
+.act input{width:22px;height:22px;margin-top:2px;flex:none}
+.act.on{border-color:var(--teal)}
+.scale{display:flex;gap:8px}
+.scale label{flex:1;margin:0;text-align:center;font-weight:600}
+.scale input{position:absolute;opacity:0}
+.scale span{display:block;padding:10px 0;border:1.5px solid var(--line);border-radius:8px;background:var(--card);cursor:pointer}
+.scale input:checked+span{background:var(--teal);color:#fff;border-color:var(--teal)}
+.scale input:focus-visible+span{outline:3px solid var(--gold)}
+.warn{background:#FFF3D6;color:#5a3d00;border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:.9rem}
+.ok{color:var(--teal);font-weight:600;margin-top:10px;min-height:1.4em}
+.hide{display:none}
+</style>
+</head>
+<body>
+<main>
+<div id="warn" class="warn hide">Not connected to the Google Sheet yet. Paste your Apps Script URL into ENDPOINT in this file.</div>
+
+<section id="setup">
+  <h1>Finish one money goal.</h1>
+  <p class="lead">Pick a goal, get three actions, and check in weekly. Takes 2 minutes. Approximate answers are fine, so don't enter exact amounts or account details.</p>
+  <label for="code">Your tester code</label>
+  <input id="code" type="text" placeholder="e.g. T07 (shared by Gaurav)" autocomplete="off">
+  <label for="age">Age</label>
+  <select id="age"><option value="">Select</option><option>Under 25</option><option>25-34</option><option>35-44</option><option>45-54</option><option>55+</option></select>
+  <label for="income">Monthly take-home income</label>
+  <select id="income"><option value="">Select</option><option>Under ₹50k</option><option>₹50k-1L</option><option>₹1L-2L</option><option>₹2L-4L</option><option>Above ₹4L</option></select>
+  <label for="goal">Goal to work on</label>
+  <select id="goal"><option value="">Select</option><option>Build an emergency fund</option><option>Clear a loan faster</option><option>Get adequate insurance cover</option><option>Start a monthly investing habit</option></select>
+  <label for="savings">Savings you could use in an emergency</label>
+  <select id="savings"><option value="">Select</option><option>Less than 1 month of expenses</option><option>1-3 months</option><option>3-6 months</option><option>More than 6 months</option></select>
+  <label for="emi">Share of income going to EMIs</label>
+  <select id="emi"><option value="">Select</option><option>None</option><option>Under 20%</option><option>20-40%</option><option>Over 40%</option></select>
+  <label for="ins">Insurance you have today</label>
+  <select id="ins"><option value="">Select</option><option>Neither term nor health</option><option>Health only</option><option>Term only</option><option>Both</option></select>
+  <label class="chk"><input type="checkbox" id="consent"><span>I agree to share these approximate answers with Gaurav for this feedback test. They are used only to improve Finwell, and I can ask for them to be deleted. This is guidance, not regulated financial advice.</span></label>
+  <button id="start">Get my plan</button>
+  <div id="err" class="ok" style="color:#B3261E"></div>
+</section>
+
+<section id="plan" class="hide">
+  <h2 id="gt"></h2>
+  <p class="meta" id="wk"></p>
+  <div class="track" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="bar"><div class="fill" id="fill"></div></div>
+  <p class="meta" id="pc"></p>
+  <h2 style="font-size:1.2rem;margin-top:24px">Your three actions</h2>
+  <div id="acts"></div>
+  <label style="margin-top:22px">How confident are you that you'll finish this goal?</label>
+  <div class="scale" id="conf"></div>
+  <label for="note">Anything blocking you, or anything confusing here?</label>
+  <textarea id="note" rows="3"></textarea>
+  <div style="height:16px"></div>
+  <button id="save">Save this week's check-in</button>
+  <div class="ok" id="msg" role="status"></div>
+  <button class="ghost" id="reset">Start over with a new goal</button>
+</section>
+</main>
+<script>
+const ENDPOINT='PASTE_APPS_SCRIPT_URL_HERE';
+const PLANS={
+'Build an emergency fund':['Add up your essential monthly costs (rent, EMIs, food, bills).','Open a separate savings account just for the emergency fund.','Set an auto-transfer on salary day toward 6 months of essentials.'],
+'Clear a loan faster':['List every loan with its interest rate and EMI.','Make one extra prepayment on the highest-rate loan.','Avoid taking any new unsecured credit for the next 30 days.'],
+'Get adequate insurance cover':['Check what cover you already have, including your employer policy.','Get two term-cover quotes for roughly 10x your annual income.','Confirm health cover that includes your family and is not tied only to your job.'],
+'Start a monthly investing habit':['Choose a monthly amount you can invest without strain.','Start an automated monthly SIP in a diversified fund.','Set a reminder to review in 90 days, not daily.']};
+const $=id=>document.getElementById(id);
+let S=null,conf='';
+try{S=JSON.parse(localStorage.getItem('finwell')||'null')}catch(e){}
+if(ENDPOINT.includes('PASTE'))$('warn').classList.remove('hide');
+function send(d){try{fetch(ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(d)}).catch(()=>{})}catch(e){}}
+function save(){try{localStorage.setItem('finwell',JSON.stringify(S))}catch(e){}}
+function week(){return Math.floor((Date.now()-S.start)/604800000)+1}
+function pct(){return Math.round(S.done.filter(Boolean).length/3*100)}
+function paint(){
+  $('setup').classList.add('hide');$('plan').classList.remove('hide');
+  $('gt').textContent=S.goal;$('wk').textContent='Week '+week()+' · '+S.checkins+' check-in'+(S.checkins===1?'':'s')+' saved';
+  const p=pct();$('fill').style.width=p+'%';$('bar').setAttribute('aria-valuenow',p);$('pc').textContent=p+'% of your plan done';
+  $('acts').innerHTML='';
+  PLANS[S.goal].forEach((t,i)=>{
+    const l=document.createElement('label');l.className='act'+(S.done[i]?' on':'');
+    l.innerHTML='<input type="checkbox"'+(S.done[i]?' checked':'')+'><span></span>';
+    l.querySelector('span').textContent=t;
+    l.querySelector('input').onchange=e=>{S.done[i]=e.target.checked;save();paint()};
+    $('acts').appendChild(l);
+  });
+  $('conf').innerHTML='';
+  for(let n=1;n<=5;n++){const l=document.createElement('label');l.innerHTML='<input type="radio" name="c" value="'+n+'"><span>'+n+'</span>';l.querySelector('input').onchange=()=>conf=n;$('conf').appendChild(l)}
+}
+$('start').onclick=()=>{
+  const g=id=>$(id).value.trim(),f={code:g('code'),age:g('age'),income:g('income'),goal:g('goal'),savings:g('savings'),emi:g('emi'),ins:g('ins')};
+  if(Object.values(f).some(v=>!v)){$('err').textContent='Please fill in every field.';return}
+  if(!$('consent').checked){$('err').textContent='Please tick the consent box to continue.';return}
+  S={...f,done:[false,false,false],start:Date.now(),checkins:0};save();
+  send({tester_code:f.code,event:'plan_created',age_band:f.age,income_band:f.income,goal:f.goal,savings_band:f.savings,emi_band:f.emi,insurance:f.ins,actions_done:0,progress_pct:0,week:1});
+  paint();
+};
+$('save').onclick=()=>{
+  if(!conf){$('msg').textContent='Pick a confidence score from 1 to 5 first.';return}
+  S.checkins++;save();
+  send({tester_code:S.code,event:'checkin',age_band:S.age,income_band:S.income,goal:S.goal,savings_band:S.savings,emi_band:S.emi,insurance:S.ins,actions_done:S.done.filter(Boolean).length,progress_pct:pct(),week:week(),confidence:conf,note:$('note').value.trim()});
+  $('note').value='';$('msg').textContent='Check-in saved. See you next week.';paint();
+};
+$('reset').onclick=()=>{if(confirm('Start over? Your saved progress on this device will be cleared.')){S=null;try{localStorage.removeItem('finwell')}catch(e){}location.reload()}};
+if(S)paint();
+</script>
+</body>
+</html>
